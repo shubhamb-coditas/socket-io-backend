@@ -1,4 +1,4 @@
-package com.gucardev.demosocketio.model;
+package com.chat.socketIO.model;
 
 public enum MessageType {
     SERVER, CLIENT

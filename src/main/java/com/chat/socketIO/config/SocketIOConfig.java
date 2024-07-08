@@ -1,4 +1,4 @@
-package com.gucardev.demosocketio.config;
+package com.chat.socketIO.config;
 import com.corundumstudio.socketio.SocketIOServer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

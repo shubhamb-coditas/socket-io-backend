@@ -1,8 +1,7 @@
-package com.gucardev.demosocketio.service;
+package com.chat.socketIO.service;
 
+import com.chat.socketIO.model.Message;
 import com.corundumstudio.socketio.SocketIOClient;
-import com.gucardev.demosocketio.model.Message;
-import com.gucardev.demosocketio.model.MessageType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -10,12 +9,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class SocketService {
 
-    public void sendMessage(String room,String eventName, SocketIOClient senderClient, String message) {
+    public void sendMessage(String room,String eventName, SocketIOClient senderClient, Message message) {
+//        message.setSender(senderClient.getSessionId().toString());
+        log.info("Sending message to [get_message] event : {} " , message);
         for (
                 SocketIOClient client : senderClient.getNamespace().getRoomOperations(room).getClients()) {
             if (!client.getSessionId().equals(senderClient.getSessionId())) {
-                client.sendEvent(eventName,
-                        new Message(MessageType.SERVER, message));
+                client.sendEvent(eventName, message);
             }
         }
     }
