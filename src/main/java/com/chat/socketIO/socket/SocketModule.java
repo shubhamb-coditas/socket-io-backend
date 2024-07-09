@@ -83,6 +83,12 @@ public class SocketModule {
             List<Message> chatHistory = messageRepository.findByRoom(room);
             client.sendEvent("chat_history", chatHistory);
 
+            // Notify the newly connected client of the current online status of all users in the room
+            List<User> usersInRoom = userRepository.findByRoom(room);
+            for (User u : usersInRoom) {
+                client.sendEvent("user_status", new UserStatus(u.getUsername(), u.isOnline()));
+            }
+
             // Notify other users in the room that a user has joined
             server.getRoomOperations(room).sendEvent("user_status", new UserStatus(username, true));
 
