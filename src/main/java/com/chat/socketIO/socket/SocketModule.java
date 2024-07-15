@@ -1,5 +1,6 @@
 package com.chat.socketIO.socket;
 
+import com.chat.socketIO.model.TypingStatus;
 import com.chat.socketIO.model.User;
 import com.chat.socketIO.repository.MessageRepository;
 import com.chat.socketIO.repository.UserRepository;
@@ -42,6 +43,7 @@ public class SocketModule {
         server.addConnectListener(onConnected());
         server.addDisconnectListener(onDisconnected());
         server.addEventListener("send_message", Message.class, onChatReceived());
+        server.addEventListener("typing", TypingStatus.class, onTypingReceived());
         //server.start();
     }
 
@@ -99,6 +101,18 @@ public class SocketModule {
                 // Broadcast the message to the room
                 server.getRoomOperations(data.getRoom()).sendEvent("get_message", data);
                 ackSender.sendAckData("message sent in room : " + data.getRoom());
+            }
+        };
+    }
+
+    private DataListener<TypingStatus> onTypingReceived() {
+        return (client, data, ackSender) -> {
+            String token = userTokenMap.get(client.getSessionId().toString());
+
+            if (token != null) {
+                log.info("Typing event received: {}", data);
+                // Broadcast the typing status to the room
+                server.getRoomOperations(data.getRoom()).sendEvent("typing_status", data);
             }
         };
     }
