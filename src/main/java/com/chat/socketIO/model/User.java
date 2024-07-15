@@ -14,6 +14,7 @@ public class User {
     private String token;
     private String username;
     private String room;
+    private boolean online;
 
     // Getters and Setters
 }

@@ -2,9 +2,10 @@ package com.chat.socketIO.socket;
 
 import com.chat.socketIO.model.TypingStatus;
 import com.chat.socketIO.model.User;
+import com.chat.socketIO.model.UserStatus;
 import com.chat.socketIO.repository.MessageRepository;
 import com.chat.socketIO.repository.UserRepository;
-import com.chat.socketIO.service.SocketService;
+//import com.chat.socketIO.service.SocketService;
 import com.corundumstudio.socketio.HandshakeData;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.ConnectListener;
@@ -68,6 +69,8 @@ public class SocketModule {
                 user.setToken(generateNewToken());
                 user.setUsername(username);
                 user.setRoom(room);
+                // Set user status to online
+                user.setOnline(true);
                 userRepository.save(user);
             }
 
@@ -80,13 +83,31 @@ public class SocketModule {
             List<Message> chatHistory = messageRepository.findByRoom(room);
             client.sendEvent("chat_history", chatHistory);
 
+            // Notify the newly connected client of the current online status of all users in the room
+            List<User> usersInRoom = userRepository.findByRoom(room);
+            for (User u : usersInRoom) {
+                client.sendEvent("user_status", new UserStatus(u.getUsername(), u.isOnline()));
+            }
+
+            // Notify other users in the room that a user has joined
+            server.getRoomOperations(room).sendEvent("user_status", new UserStatus(username, true));
+
             log.info("Client[{}] - Connected with token: {} and username: {}", client.getSessionId().toString(), token, username);
         };
     }
 
     private DisconnectListener onDisconnected() {
         return client -> {
-            userTokenMap.remove(client.getSessionId().toString());
+            String token = userTokenMap.remove(client.getSessionId().toString());
+            if (token != null) {
+                Optional<User> userOpt = userRepository.findByToken(token);
+                userOpt.ifPresent(user -> {
+                    user.setOnline(false); // Set user status to offline
+                    userRepository.save(user);
+                    // Notify other users in the room that a user has left
+                    server.getRoomOperations(user.getRoom()).sendEvent("user_status", new UserStatus(user.getUsername(), false));
+                });
+            }
             log.info("Client[{}] - Disconnected from socket", client.getSessionId().toString());
         };
     }
