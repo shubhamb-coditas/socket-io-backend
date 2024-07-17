@@ -45,6 +45,8 @@ public class SocketModule {
         server.addDisconnectListener(onDisconnected());
         server.addEventListener("send_message", Message.class, onChatReceived());
         server.addEventListener("typing", TypingStatus.class, onTypingReceived());
+        server.addEventListener("update_message_status", Message.class, onMessageStatusUpdated()); // New event listener for status update
+
         //server.start();
     }
 
@@ -118,6 +120,7 @@ public class SocketModule {
 
             if (token != null) {
                 // Save chat message to the database
+                data.setStatus("SENT");
                 messageRepository.save(data);
                 // Broadcast the message to the room
                 server.getRoomOperations(data.getRoom()).sendEvent("get_message", data);
@@ -134,6 +137,18 @@ public class SocketModule {
                 log.info("Typing event received: {}", data);
                 // Broadcast the typing status to the room
                 server.getRoomOperations(data.getRoom()).sendEvent("typing_status", data);
+            }
+        };
+    }
+
+    private DataListener<Message> onMessageStatusUpdated() {
+        return (client, data, ackSender) -> {
+            Optional<Message> optionalMessage = messageRepository.findById(data.getId());
+            if (optionalMessage.isPresent()) {
+                Message message = optionalMessage.get();
+                message.setStatus(data.getStatus());
+                messageRepository.save(message);
+                server.getRoomOperations(message.getRoom()).sendEvent("message_status_updated", message);
             }
         };
     }

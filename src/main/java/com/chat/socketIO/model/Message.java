@@ -26,6 +26,7 @@ public class Message implements Serializable {
     private byte[] mediaFile;
     private String mediaFileName;
     private String mediaFileType;
+    private String status;
 
     public Message() {}
 
